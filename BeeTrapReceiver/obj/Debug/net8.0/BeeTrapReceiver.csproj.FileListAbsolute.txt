@@ -1,0 +1,14 @@
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/bin/Debug/net8.0/BeeTrapReceiver
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/bin/Debug/net8.0/BeeTrapReceiver.deps.json
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/bin/Debug/net8.0/BeeTrapReceiver.runtimeconfig.json
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/bin/Debug/net8.0/BeeTrapReceiver.dll
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/bin/Debug/net8.0/BeeTrapReceiver.pdb
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/BeeTrapReceiver.GeneratedMSBuildEditorConfig.editorconfig
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/BeeTrapReceiver.AssemblyInfoInputs.cache
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/BeeTrapReceiver.AssemblyInfo.cs
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/BeeTrapReceiver.csproj.CoreCompileInputs.cache
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/BeeTrapReceiver.dll
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/refint/BeeTrapReceiver.dll
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/BeeTrapReceiver.pdb
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/BeeTrapReceiver.genruntimeconfig.cache
+/Users/andy/Work/1132/BeeTrap/BeeTrapSocket/BeeTrapReceiver/obj/Debug/net8.0/ref/BeeTrapReceiver.dll
