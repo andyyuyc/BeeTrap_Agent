@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JSON Viewer Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; display: flex; height: 100vh; margin: 0; background: #f0f2f5; }
+    aside { width: 280px; background: #fff; padding: 1rem; border-right: 1px solid #ccc; overflow-y: auto; }
+    main { flex: 1; padding: 1rem; overflow-y: auto; }
+    .file { padding: 0.5rem; margin-bottom: 0.25rem; cursor: pointer; background: #fff; border: 1px solid #ccc; border-radius: 4px; }
+    .file:hover { background: #e0efff; }
+    canvas { margin-top: 2rem; background: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 0 6px rgba(0,0,0,0.1); }
+    input[type="text"] { width: 100%; padding: 0.4rem; margin-bottom: 0.5rem; }
+    .chart-btn, .field-btn {
+      margin: 0 4px 6px 0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background: #eee;
+      cursor: pointer;
+    }
+    .chart-btn.active, .field-btn.active {
+      background-color: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    #fieldButtons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <aside>
+    <h3>📂 JSON Files</h3>
+    <input type="text" id="search" placeholder="Search file name..." />
+    <div id="fileList">Loading...</div>
+  </aside>
+  <main>
+    <h3>📊 Data Trend Analysis</h3>
+    <div>
+      <div id="chartTypeButtons">
+        <button data-type="line" class="chart-btn active">Line Chart</button>
+        <button data-type="bar" class="chart-btn">Bar Chart</button>
+      </div>
+      <div id="fieldButtons"></div>
+    </div>
+    <canvas id="overlayChart" height="300"></canvas>
+    <div id="charts"></div>
+  </main>
+
+  <script>
+    let allFiles = [], previousFiles = [], allData = {}, allMetrics = new Set(), timeLabels = [];
+    let chartType = 'line', selectedFields = [], overlayChart = null;
+
+    const searchInput = document.getElementById('search');
+    const overlayCanvas = document.getElementById('overlayChart');
+
+    searchInput.addEventListener('input', () => {
+      const keyword = searchInput.value.toLowerCase();
+      renderFileList(allFiles.filter(f => f.toLowerCase().includes(keyword)));
+    });
+
+    document.querySelectorAll('#chartTypeButtons button').forEach(btn => {
+      btn.onclick = () => {
+        chartType = btn.dataset.type;
+        document.querySelectorAll('#chartTypeButtons button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderOverlayChart();
+        renderAllCharts();
+      };
+    });
+
+    function renderFileList(files) {
+      const container = document.getElementById('fileList');
+      container.innerHTML = '';
+      files.forEach(file => {
+        const div = document.createElement('div');
+        div.className = 'file';
+        div.innerText = file;
+        div.onclick = () => loadFile(file);
+        container.appendChild(div);
+      });
+    }
+
+    async function loadFile(name) {
+      const res = await fetch('/api/file/' + name);
+      const text = await res.text();
+      alert(JSON.stringify(JSON.parse(text), null, 2));
+    }
+
+    async function loadAllData(files) {
+      timeLabels = files.map(f => f.replace('state_', '').replace('.json', ''));
+      allData = {}; allMetrics = new Set();
+
+      for (const file of files) {
+        try {
+          const res = await fetch('/api/file/' + file);
+          const json = await res.json();
+          Object.keys(json).forEach(key => {
+            if (typeof json[key] === 'object' && !Array.isArray(json[key])) return;
+            allMetrics.add(key);
+            if (!allData[key]) allData[key] = [];
+            let value = json[key];
+            if (typeof value === 'boolean') value = value ? 1 : 0;
+            if (Array.isArray(value)) value = value.length > 0 ? value[value.length - 1] : null;
+            allData[key].push(value ?? null);
+          });
+          for (const metric of allMetrics) {
+            if (!(metric in json)) allData[metric].push(null);
+          }
+        } catch (err) { console.error("❌ Error loading", file, err); }
+      }
+
+      if (selectedFields.length === 0) selectedFields = Array.from(allMetrics).slice(0, 3);
+      updateFieldButtons();
+      renderOverlayChart();
+      renderAllCharts();
+    }
+
+    function updateFieldButtons() {
+      const container = document.getElementById('fieldButtons');
+      container.innerHTML = '';
+      Array.from(allMetrics).forEach(metric => {
+        const btn = document.createElement('button');
+        btn.textContent = metric;
+        btn.className = 'field-btn';
+        if (selectedFields.includes(metric)) btn.classList.add('active');
+        btn.onclick = () => {
+          if (selectedFields.includes(metric)) {
+            selectedFields = selectedFields.filter(m => m !== metric);
+          } else {
+            selectedFields.push(metric);
+          }
+          updateFieldButtons();
+          renderOverlayChart();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderOverlayChart() {
+      if (overlayChart) overlayChart.destroy();
+      const datasets = selectedFields.map((metric, idx) => ({
+        label: metric,
+        data: allData[metric],
+        borderColor: `hsl(${(idx * 47) % 360}, 70%, 50%)`,
+        backgroundColor: chartType === 'bar' ? `hsl(${(idx * 47) % 360}, 70%, 80%)` : 'transparent',
+        fill: false,
+        tension: 0.3,
+        borderWidth: 1.2,
+        pointRadius: 1
+      }));
+      overlayChart = new Chart(overlayCanvas.getContext('2d'), {
+        type: chartType,
+        data: { labels: timeLabels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            title: { display: true, text: '📊 Selected Fields Overlay Chart' }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Timestamp' } },
+            y: { beginAtZero: true, title: { display: true, text: 'Value' } }
+          }
+        }
+      });
+    }
+
+    function renderAllCharts() {
+      const container = document.getElementById('charts');
+      container.innerHTML = '';
+      for (const metric of Array.from(allMetrics)) {
+        const canvas = document.createElement('canvas');
+        canvas.height = 200;
+        container.appendChild(canvas);
+        new Chart(canvas.getContext('2d'), {
+          type: chartType,
+          data: {
+            labels: timeLabels,
+            datasets: [{
+              label: metric,
+              data: allData[metric],
+              borderColor: '#36a2eb',
+              backgroundColor: 'rgba(54, 162, 235, 0.1)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 1.2,
+              pointRadius: 1,
+              pointHoverRadius: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              title: { display: true, text: metric + ' over time' }
+            },
+            scales: {
+              x: { title: { display: true, text: 'Timestamp' } },
+              y: { beginAtZero: true, title: { display: true, text: metric } }
+            }
+          }
+        });
+      }
+    }
+
+    async function detectNewFiles() {
+      const res = await fetch('/api/files');
+      const currentFiles = (await res.json()).sort();
+      const added = currentFiles.filter(f => !previousFiles.includes(f));
+      if (added.length > 0 || currentFiles.length !== previousFiles.length) {
+        allFiles = currentFiles;
+        previousFiles = [...currentFiles];
+        renderFileList(allFiles);
+        await loadAllData(allFiles);
+      }
+    }
+
+    async function init() {
+      const res = await fetch('/api/files');
+      allFiles = (await res.json()).sort();
+      previousFiles = [...allFiles];
+      renderFileList(allFiles);
+      await loadAllData(allFiles);
+      setInterval(detectNewFiles, 100);
+    }
+
+    init();
+  </script>
+</body>
+</html>
